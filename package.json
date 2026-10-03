@@ -1,0 +1,14 @@
+{
+  "name": "usynth",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^26.6.4",
+    "terser": "^5.51.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
