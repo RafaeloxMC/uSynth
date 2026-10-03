@@ -1,5 +1,89 @@
-<!DOCTYPE html>
 <body>
-    <p>hi! worky worky</p>
+	<select id="type">
+		<option>Sine</option>
+		<option>Square</option>
+		<option>Sawtooth</option>
+		<option>Triangle</option>
+	</select>
+	<div id="btn"></div>
+
+	<script>
+		let button_data_note = '</button><button data-note="';
+		let children = "";
+		for (let i = 1; i < 4; i++) {
+			children +=
+				'<button data-note="' +
+				261.63 * i +
+				'">C' +
+				button_data_note +
+				293.66 * i +
+				'">D' +
+				button_data_note +
+				329.63 * i +
+				'">E' +
+				button_data_note +
+				349.23 * i +
+				'">F' +
+				button_data_note +
+				392.0 * i +
+				'">G' +
+				button_data_note +
+				440.0 * i +
+				'">A' +
+				button_data_note +
+				493.88 * i +
+				'">B</button>';
+		}
+		document.getElementById("btn").innerHTML = children;
+
+		let audio;
+		let oscillator;
+		let gain;
+
+		function startSound(frequency) {
+			audio ??= new AudioContext();
+
+			oscillator = audio.createOscillator();
+			gain = audio.createGain();
+			oscillator.type = document
+				.getElementById("type")
+				.value.toLowerCase();
+			oscillator.frequency.value = frequency;
+
+			gain.gain.setValueAtTime(0.0001, audio.currentTime);
+			gain.gain.exponentialRampToValueAtTime(
+				0.25,
+				audio.currentTime + 0.02,
+			);
+
+			oscillator.connect(gain);
+			gain.connect(audio.destination);
+			oscillator.start();
+		}
+
+		function stopSound() {
+			if (!oscillator) return;
+
+			gain.gain.exponentialRampToValueAtTime(
+				0.0001,
+				audio.currentTime + 0.05,
+			);
+
+			oscillator.stop(audio.currentTime + 0.06);
+			oscillator = null;
+		}
+
+		document.querySelectorAll("button").forEach((button) => {
+			const frequency = Number(button.dataset.note);
+
+			button.addEventListener("pointerdown", () => {
+				stopSound();
+				startSound(frequency);
+			});
+
+			button.addEventListener("pointerup", stopSound);
+			button.addEventListener("pointerleave", stopSound);
+			button.addEventListener("pointercancel", stopSound);
+		});
+	</script>
 </body>
-</html>
