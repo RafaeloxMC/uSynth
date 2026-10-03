@@ -13,25 +13,25 @@
 		for (let i = 1; i < 4; i++) {
 			children +=
 				'<button data-note="' +
-				261.63 * i +
+				261.63 * 2 ** i +
 				'">C' +
 				button_data_note +
-				293.66 * i +
+				293.66 * 2 ** i +
 				'">D' +
 				button_data_note +
-				329.63 * i +
+				329.63 * 2 ** i +
 				'">E' +
 				button_data_note +
-				349.23 * i +
+				349.23 * 2 ** i +
 				'">F' +
 				button_data_note +
-				392.0 * i +
+				392.0 * 2 ** i +
 				'">G' +
 				button_data_note +
-				440.0 * i +
+				440.0 * 2 ** i +
 				'">A' +
 				button_data_note +
-				493.88 * i +
+				493.88 * 2 ** i +
 				'">B</button>';
 		}
 		document.getElementById("btn").innerHTML = children;
