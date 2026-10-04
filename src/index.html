@@ -6,8 +6,51 @@
 		<option>Triangle</option>
 	</select>
 	<div id="btn"></div>
+	<div>
+		<input type="checkbox" id="v" onclick="iu()" checked />
+		<label for="v">Velocity</label>
+	</div>
 
 	<script>
+		let midi = null;
+		let velocity_enabled = true;
+		function iu() {
+			velocity_enabled = document.getElementById("v").checked;
+		}
+
+		function onMIDIMessage(event) {
+			const [status, note, velocity] = event.data;
+			const messageType = status & 0xf0;
+			const frequency = 440 * 2 ** ((note - 69) / 12);
+
+			if (messageType === 0x90 && velocity > 0) {
+				startSound(frequency, note, velocity);
+			} else if (
+				messageType === 0x80 ||
+				(messageType === 0x90 && velocity === 0)
+			) {
+				stopSound(note);
+			}
+		}
+
+		function startLoggingMIDIInput(midiAccess) {
+			midiAccess.inputs.forEach((entry) => {
+				entry.onmidimessage = onMIDIMessage;
+			});
+		}
+
+		function onMIDISuccess(midiAccess) {
+			console.log("MIDI ready!");
+			midi = midiAccess;
+			startLoggingMIDIInput(midi);
+		}
+
+		function onMIDIFailure(msg) {
+			console.error(`Failed to get MIDI access - ${msg}`);
+		}
+
+		navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+
 		let button_data_note = '</button><button data-note="';
 		let children = "";
 		for (let i = 1; i < 4; i++) {
@@ -37,53 +80,73 @@
 		document.getElementById("btn").innerHTML = children;
 
 		let audio;
-		let oscillator;
-		let gain;
+		const activeSounds = new Map();
 
-		function startSound(frequency) {
+		function startSound(frequency, soundKey, velocity = 127) {
 			audio ??= new AudioContext();
+			audio.resume();
 
-			oscillator = audio.createOscillator();
-			gain = audio.createGain();
+			const oscillator = audio.createOscillator();
+			const gain = audio.createGain();
+			const currentTime = audio.currentTime;
+
 			oscillator.type = document
 				.getElementById("type")
 				.value.toLowerCase();
+
 			oscillator.frequency.value = frequency;
 
-			gain.gain.setValueAtTime(0.0001, audio.currentTime);
+			gain.gain.setValueAtTime(0.0001, currentTime);
 			gain.gain.exponentialRampToValueAtTime(
-				0.25,
-				audio.currentTime + 0.02,
+				velocity_enabled ? (velocity / 127) * 0.25 : 0.25,
+				currentTime + 0.02,
 			);
 
 			oscillator.connect(gain);
 			gain.connect(audio.destination);
 			oscillator.start();
+
+			activeSounds.set(soundKey, { oscillator, gain });
 		}
 
-		function stopSound() {
-			if (!oscillator) return;
+		function stopSound(soundKey) {
+			const sound = activeSounds.get(soundKey);
+			if (!sound) return;
 
-			gain.gain.exponentialRampToValueAtTime(
+			const currentTime = audio.currentTime;
+
+			sound.gain.gain.cancelScheduledValues(currentTime);
+			sound.gain.gain.setValueAtTime(
+				Math.max(sound.gain.gain.value, 0.0001),
+				currentTime,
+			);
+			sound.gain.gain.exponentialRampToValueAtTime(
 				0.0001,
-				audio.currentTime + 0.05,
+				currentTime + 0.05,
 			);
 
-			oscillator.stop(audio.currentTime + 0.06);
-			oscillator = null;
+			sound.oscillator.stop(currentTime + 0.06);
+			activeSounds.delete(soundKey);
 		}
 
 		document.querySelectorAll("button").forEach((button) => {
 			const frequency = Number(button.dataset.note);
 
 			button.addEventListener("pointerdown", () => {
-				stopSound();
-				startSound(frequency);
+				startSound(frequency, button, 127);
 			});
 
-			button.addEventListener("pointerup", stopSound);
-			button.addEventListener("pointerleave", stopSound);
-			button.addEventListener("pointercancel", stopSound);
+			button.addEventListener("pointerup", () => {
+				stopSound(button);
+			});
+
+			button.addEventListener("pointerleave", () => {
+				stopSound(button);
+			});
+
+			button.addEventListener("pointercancel", () => {
+				stopSound(button);
+			});
 		});
 	</script>
 </body>
