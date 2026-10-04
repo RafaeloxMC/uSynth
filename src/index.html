@@ -1,15 +1,27 @@
 <body>
-	<select id="type">
-		<option>Sine</option>
-		<option>Square</option>
-		<option>Sawtooth</option>
-		<option>Triangle</option>
-	</select>
+	<h1>µSynth</h1>
+	<canvas id="scope" width="600" height="150"></canvas>
 	<div id="btn"></div>
 	<div>
+		<select id="type">
+			<option>Sine</option>
+			<option>Square</option>
+			<option>Sawtooth</option>
+			<option>Triangle</option>
+		</select>
 		<input type="checkbox" id="v" onclick="iu()" checked />
 		<label for="v">Velocity</label>
 	</div>
+
+	<style>
+		body {
+			background-color: black;
+			color: white;
+			font-family:
+				"Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
+				"Lucida Sans", Arial, sans-serif;
+		}
+	</style>
 
 	<script>
 		let midi = null;
@@ -81,9 +93,48 @@
 
 		let audio;
 		const activeSounds = new Map();
+		let analyser;
+
+		const canvas = document.getElementById("scope");
+		const ctx = canvas.getContext("2d");
+
+		function setupScope() {
+			analyser = audio.createAnalyser();
+			analyser.fftSize = 1024;
+			analyser.connect(audio.destination);
+
+			const data = new Uint8Array(analyser.fftSize);
+
+			function draw() {
+				requestAnimationFrame(draw);
+				analyser.getByteTimeDomainData(data);
+
+				ctx.fillStyle = "black";
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+				ctx.strokeStyle = "magenta";
+				ctx.lineWidth = 2;
+				ctx.beginPath();
+
+				for (let i = 0; i < data.length; i++) {
+					const x = (i / (data.length - 1)) * canvas.width;
+					const y = (data[i] / 255) * canvas.height;
+
+					if (i === 0) ctx.moveTo(x, y);
+					else ctx.lineTo(x, y);
+				}
+
+				ctx.stroke();
+			}
+
+			draw();
+		}
 
 		function startSound(frequency, soundKey, velocity = 127) {
 			audio ??= new AudioContext();
+
+			if (!analyser) setupScope();
+
 			audio.resume();
 
 			const oscillator = audio.createOscillator();
@@ -103,7 +154,7 @@
 			);
 
 			oscillator.connect(gain);
-			gain.connect(audio.destination);
+			gain.connect(analyser);
 			oscillator.start();
 
 			activeSounds.set(soundKey, { oscillator, gain });
