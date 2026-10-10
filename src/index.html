@@ -197,5 +197,13 @@
 				stopSound(button);
 			});
 		});
+
+		const keys = "awsedftgyhujkolp;";
+		addEventListener("keydown", (e) => {
+			const i = keys.indexOf(e.key);
+			if (i < 0 || e.repeat) return;
+			startSound(261.63 * 2 ** (i / 12), e.key);
+		});
+		addEventListener("keyup", (e) => stopSound(e.key));
 	</script>
 </body>
