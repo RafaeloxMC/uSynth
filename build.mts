@@ -38,7 +38,8 @@ for (const part of src.split(
 			.replace(/<!--[\s\S]*?-->/g, "")
 			.replace(/\s+/g, " ")
 			.replace(/>\s+</g, "><")
-			.trim();
+			.trim()
+			.replace(/[^\x00-\x7f]/g, (c) => "&#" + c.codePointAt(0) + ";");
 	}
 }
 
