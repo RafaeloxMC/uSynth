@@ -1,15 +1,7 @@
-# usynth
+# µSynth
 
-To install dependencies:
+Simple synth <3kb. Allows 4 different wave styles & supports MIDI input (not from data URL context). Features an oscilloscope.
 
-```bash
-bun install
-```
+To run, open [`src/index.html`](src/index.html), to compile, run `bun run build.mts`. Data URI will be written to `dist/uri.txt`.
 
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.3.5. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+Have fun!
